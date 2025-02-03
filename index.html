@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Management System</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        .call-log-table, .completed-task-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .call-log-table th, .call-log-table td,
+        .completed-task-table th, .completed-task-table td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+        .call-log-table th {
+            background-color: #f8f9fa;
+        }
+        .completed-task-table th, .completed-task-table td {
+            background-color: #c6efce;
+        }
+        .completed-task-table th {
+            background-color: #8bc34a;
+        }
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 10px;
+                padding: 15px;
+            }
+            .d-flex {
+                flex-direction: column;
+            }
+            .form-control {
+                width: 100% !important;
+                margin-bottom: 10px;
+            }
+            .call-log-table, .completed-task-table {
+                display: block;
+                overflow-x: auto;
+            }
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginModalLabel">System Login</h5>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" required>
+                        </div>
+                        <div class="mb-3 text-danger" id="loginError" style="display: none;">
+                            Invalid username or password!
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <h1 class="mb-4">My Pending Tasks</h1>
+        <div class="d-flex justify-content-between mb-4">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCallModal">Add New Call</button>
+            <input type="search" id="search-input" class="form-control w-auto" placeholder="Search calls...">
+        </div>
+        
+        <table class="call-log-table table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Caller</th>
+                    <th>Ph. No./Ext</th>
+                    <th>Purpose/Remarks</th>
+                    <th>Delegate To</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="call-log-body"></tbody>
+        </table>
+
+        <h2 class="mt-5 mb-3">Completed Tasks</h2>
+        <table class="completed-task-table table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Caller</th>
+                    <th>Ph. No./Ext</th>
+                    <th>Purpose/Remarks</th>
+                    <th>Delegate To</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="archive-body"></tbody>
+        </table>
+    </div>
+
+    <!-- Add Call Modal -->
+    <div class="modal fade" id="addCallModal" tabindex="-1" aria-labelledby="addCallModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCallModalLabel">Add New Call</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-call-form">
+                        <div class="mb-3">
+                            <label for="caller" class="form-label">Caller:</label>
+                            <input type="text" id="caller" name="caller" required class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="recipient" class="form-label">Ph. No./Ext:</label>
+                            <input type="text" id="recipient" name="recipient" required class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="remarks" class="form-label">Purpose/Remarks:</label>
+                            <textarea id="remarks" name="remarks" rows="3" required class="form-control"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="delegateTo" class="form-label">Task Delegate To:</label>
+                            <input type="text" id="delegateTo" name="delegateTo" required class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Call</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Call Modal -->
+    <div class="modal fade" id="editCallModal" tabindex="-1" aria-labelledby="editCallModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editCallModalLabel">Edit Call</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-call-form">
+                        <div class="mb-3">
+                            <label for="edit-caller" class="form-label">Caller:</label>
+                            <input type="text" id="edit-caller" name="caller" required class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-recipient" class="form-label">Ph. No./Ext:</label>
+                            <input type="text" id="edit-recipient" name="recipient" required class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-remarks" class="form-label">Purpose/Remarks:</label>
+                            <textarea id="edit-remarks" name="remarks" rows="3" required class="form-control"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-delegateTo" class="form-label">Task Delegate To:</label>
+                            <input type="text" id="edit-delegateTo" name="delegateTo" required class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call Details Modal -->
+    <div class="modal fade" id="callDetailsModal" tabindex="-1" aria-labelledby="callDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="callDetailsModalLabel">Call Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="call-details-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Login System
+        $(document).ready(function() {
+            const loginModal = new bootstrap.Modal('#loginModal', {
+                backdrop: 'static',
+                keyboard: false
+            });
+            loginModal.show();
+
+            $('#loginForm').submit(function(e) {
+                e.preventDefault();
+                const username = $('#username').val();
+                const password = $('#password').val();
+                
+                if(username === 'srafiq17' && password === 'NED@@@321') {
+                    loginModal.hide();
+                    $('.main-container').show();
+                    $('#loginError').hide();
+                } else {
+                    $('#loginError').show();
+                }
+            });
+        });
+
+        // Call Management System
+        let callLog = JSON.parse(localStorage.getItem('callLog')) || [];
+        let archive = JSON.parse(localStorage.getItem('archive')) || [];
+
+        $(document).ready(() => {
+            generateCallLog();
+            generateArchive();
+
+            $('#search-input').on('input', () => {
+                const searchInput = $('#search-input').val().toLowerCase();
+                const filteredCallLog = callLog.filter(c => 
+                    c.caller.toLowerCase().includes(searchInput) || 
+                    c.recipient.toLowerCase().includes(searchInput)
+                );
+                generateCallLog(filteredCallLog);
+            });
+
+            $('#add-call-form').submit(function(e) {
+                e.preventDefault();
+                const call = {
+                    date: new Date().toLocaleDateString(),
+                    time: new Date().toLocaleTimeString(),
+                    caller: $('#caller').val(),
+                    recipient: $('#recipient').val(),
+                    remarks: $('#remarks').val(),
+                    delegateTo: $('#delegateTo').val()
+                };
+                callLog.push(call);
+                localStorage.setItem('callLog', JSON.stringify(callLog));
+                generateCallLog();
+                this.reset();
+                $('#addCallModal').modal('hide');
+            });
+
+            $('#call-log-body').on('click', '.done-btn', function() {
+                const callIndex = $(this).data('index');
+                archive.push(callLog[callIndex]);
+                callLog.splice(callIndex, 1);
+                updateStorage();
+                generateCallLog();
+                generateArchive();
+            });
+
+            $('#call-log-body').on('click', '.edit-btn', function() {
+                const callIndex = $(this).data('index');
+                const call = callLog[callIndex];
+                $('#edit-caller').val(call.caller);
+                $('#edit-recipient').val(call.recipient);
+                $('#edit-remarks').val(call.remarks);
+                $('#edit-delegateTo').val(call.delegateTo);
+                $('#edit-call-form').data('index', callIndex);
+            });
+
+            $('#edit-call-form').submit(function(e) {
+                e.preventDefault();
+                const index = $(this).data('index');
+                callLog[index] = {
+                    date: new Date().toLocaleDateString(),
+                    time: new Date().toLocaleTimeString(),
+                    caller: $('#edit-caller').val(),
+                    recipient: $('#edit-recipient').val(),
+                    remarks: $('#edit-remarks').val(),
+                    delegateTo: $('#edit-delegateTo').val()
+                };
+                updateStorage();
+                generateCallLog();
+                $('#editCallModal').modal('hide');
+            });
+
+            $('#archive-body').on('click', '.delete-btn', function() {
+                archive.splice($(this).data('index'), 1);
+                localStorage.setItem('archive', JSON.stringify(archive));
+                generateArchive();
+            });
+
+            $('#call-log-body').on('click', '.view-btn', function() {
+                const call = callLog[$(this).data('index')];
+                $('#call-details-body').html(`
+                    <p><strong>Date:</strong> ${call.date}</p>
+                    <p><strong>Time:</strong> ${call.time}</p>
+                    <p><strong>Caller:</strong> ${call.caller}</p>
+                    <p><strong>Ph. No./Ext:</strong> ${call.recipient}</p>
+                    <p><strong>Purpose/Remarks:</strong> ${call.remarks}</p>
+                    <p><strong>Task Delegate To:</strong> ${call.delegateTo}</p>
+                `);
+                $('#callDetailsModal').modal('show');
+            });
+        });
+
+        function generateCallLog(filteredCallLog = callLog) {
+            $('#call-log-body').html(filteredCallLog.map((call, index) => `
+                <tr>
+                    <td>${call.date}</td>
+                    <td>${call.time}</td>
+                    <td>${call.caller}</td>
+                    <td>${call.recipient}</td>
+                    <td>${call.remarks}</td>
+                    <td>${call.delegateTo}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info view-btn" data-index="${index}">View</button>
+                        <button class="btn btn-sm btn-primary edit-btn" data-index="${index}" data-bs-toggle="modal" data-bs-target="#editCallModal">Edit</button>
+                        <button class="btn btn-sm btn-success done-btn" data-index="${index}">Done</button>
+                    </td>
+                </tr>
+            `).join(''));
+        }
+
+        function generateArchive() {
+            $('#archive-body').html(archive.map((call, index) => `
+                <tr>
+                    <td>${call.date}</td>
+                    <td>${call.time}</td>
+                    <td>${call.caller}</td>
+                    <td>${call.recipient}</td>
+                    <td>${call.remarks}</td>
+                    <td>${call.delegateTo}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger delete-btn" data-index="${index}">Delete</button>
+                    </td>
+                </tr>
+            `).join(''));
+        }
+
+        function updateStorage() {
+            localStorage.setItem('callLog', JSON.stringify(callLog));
+            localStorage.setItem('archive', JSON.stringify(archive));
+        }
+    </script>
+</body>
+</html>
